@@ -180,6 +180,42 @@ function ruleBasedAnswer(msg: string): AnswerResult | null {
     };
   }
 
+  // Appointment booking
+  if (m.includes("appointment") || m.includes("book") || m.includes("slot") || m.includes("consult") || m.includes("visit")) {
+    const bookingPolicy = c.policies.find(p => p.toLowerCase().includes("book on the phone"));
+    const cancelPolicy = c.policies.find(p => p.toLowerCase().includes("cancel or move"));
+    const reply = `To book an appointment, ${bookingPolicy ? bookingPolicy : "call or WhatsApp us"}. ${cancelPolicy ? cancelPolicy : ""} We accept walk-ins when a slot is free, but booked patients are seen first. Would you like me to help you with anything else?`;
+    return {
+      reply,
+      label: "Answered from the clinic file",
+      type: "clinic",
+    };
+  }
+
+  // Emergency contact info (non-emergency questions about whom to contact)
+  if (m.includes("emergency contact") || m.includes("whom should i contact") || m.includes("who to contact") || m.includes("emergency number") || m.includes("emergency phone")) {
+    return {
+      reply: `Emergency number: ${c.emergency_number}\n\n${c.emergency_rules}`,
+      label: "Answered from the clinic file",
+      type: "clinic",
+    };
+  }
+
+  // Payment options
+  if (m.includes("payment") || m.includes("pay") || m.includes("upi") || m.includes("card") || m.includes("cash") || m.includes("emi")) {
+    const paymentPolicy = c.policies.find(p => p.toLowerCase().includes("upi") || p.toLowerCase().includes("debit") || p.toLowerCase().includes("cash"));
+    const emiPolicy = c.policies.find(p => p.toLowerCase().includes("emi"));
+    let reply = "Payment options: ";
+    if (paymentPolicy) reply += paymentPolicy + ". ";
+    if (emiPolicy) reply += emiPolicy + ". ";
+    reply += "We also accept cash.";
+    return {
+      reply,
+      label: "Answered from the clinic file",
+      type: "clinic",
+    };
+  }
+
   // Policies
   if (m.includes("policy") || m.includes("cancel") || m.includes("payment") || m.includes("walk") || m.includes("emi") || m.includes("children") || m.includes("sterilis")) {
     return {
