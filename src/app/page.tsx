@@ -116,14 +116,14 @@ export default function Home() {
     <div key={i} className={`flex w-full ${isPatient ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
       {isPatient ? (
         <div className="flex flex-col items-end">
-          <div className="bg-indigo-600 text-white text-sm px-4 py-2.5 rounded-lg rounded-tl-none shadow-sm whitespace-pre-wrap break-words max-w-[85%] min-w-[fit-content]">
+          <div className="bg-indigo-600 text-white text-sm px-4 py-2.5 rounded-lg rounded-tl-none shadow-sm whitespace-normal break-words max-w-[85%] min-w-[8rem] overflow-hidden">
             {m.text}
           </div>
           <div className="text-[10px] text-indigo-500 mt-0.5 mr-1">You</div>
         </div>
       ) : (
         <div className="flex flex-col items-start">
-          <div className={`text-sm px-4 py-2.5 rounded-lg rounded-tr-none shadow-sm whitespace-pre-wrap break-words max-w-[85%] min-w-[fit-content] ${isStaff ? "bg-green-100 text-green-900 border border-green-200" : "bg-white text-gray-900 border border-gray-200"}`}>
+          <div className={`text-sm px-4 py-2.5 rounded-lg rounded-tr-none shadow-sm whitespace-normal break-words max-w-[85%] min-w-[8rem] overflow-hidden ${isStaff ? "bg-green-100 text-green-900 border border-green-200" : "bg-white text-gray-900 border border-gray-200"}`}>
             {m.text}
           </div>
           {m.label && (
