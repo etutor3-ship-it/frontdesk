@@ -45,6 +45,15 @@ function findPrice(serviceName: string): { service: string; price: string } | un
 export function processMessage(msg: string, patientId: string): AnswerResult {
   const m = msg.toLowerCase().trim();
 
+  // Greeting detection - friendly replies for hi, hello, good morning, etc.
+  const greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "good day", "namaste"];
+  if (greetings.some(g => m === g || m.startsWith(g + " ") || m.endsWith(" " + g))) {
+    return {
+      reply: "Hello! I'm the FrontDesk AI assistant for Smile Dental Clinic, Banjara Hills, Hyderabad. How can I help you today?",
+      type: "clinic",
+    };
+  }
+
   // 1. Emergency detection - checked first, before anything else
   // Bot rule: show emergency number first for emergencies
   if (isEmergency(msg)) {

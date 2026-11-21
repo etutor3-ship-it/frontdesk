@@ -108,58 +108,60 @@ export default function Home() {
           const isPatient = m.from === "patient";
           const isStaff = m.from === "staff";
           return (
-            <div key={i} className="flex w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
-              {isPatient ? (
-                <div className="ml-auto">
-                  <div className="inline-block bg-indigo-600 text-white text-sm px-4 py-2.5 rounded-lg rounded-tl-none shadow-sm whitespace-pre-wrap break-words max-w-[85%]">
-                    {m.text}
-                  </div>
-                  <div className="text-[10px] text-indigo-500 text-right mt-0.5 pr-1">You</div>
-                </div>
-              ) : (
-                <div className="mr-auto">
-                  <div className={`inline-block text-sm px-4 py-2.5 rounded-lg rounded-tr-none shadow-sm whitespace-pre-wrap break-words max-w-[85%] ${isStaff ? "bg-green-100 text-green-900 border border-green-200" : "bg-white text-gray-900 border border-gray-200"}`}>
-                    {m.text}
-                  </div>
-                  {m.label && (
-                    <div className="text-[10px] text-indigo-500 mt-0.5 italic pr-1">{m.label}</div>
-                  )}
-                  <div className={`text-[10px] mt-0.5 ${isStaff ? "text-green-600" : "text-indigo-500"}`}>
-                    {isStaff ? "Staff" : "FrontDesk AI"}
-                  </div>
-                </div>
-              )}
-            </div>
+    <div key={i} className={`flex w-full ${isPatient ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
+      {isPatient ? (
+        <div className="flex flex-col items-end">
+          <div className="bg-indigo-600 text-white text-sm px-4 py-2.5 rounded-lg rounded-tl-none shadow-sm whitespace-pre-wrap break-words max-w-[85%] min-w-[fit-content]">
+            {m.text}
+          </div>
+          <div className="text-[10px] text-indigo-500 mt-0.5 mr-1">You</div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-start">
+          <div className={`text-sm px-4 py-2.5 rounded-lg rounded-tr-none shadow-sm whitespace-pre-wrap break-words max-w-[85%] min-w-[fit-content] ${isStaff ? "bg-green-100 text-green-900 border border-green-200" : "bg-white text-gray-900 border border-gray-200"}`}>
+            {m.text}
+          </div>
+          {m.label && (
+            <div className="text-[10px] text-indigo-500 mt-0.5 italic ml-1">{m.label}</div>
+          )}
+          <div className={`text-[10px] mt-0.5 ml-1 ${isStaff ? "text-green-600" : "text-indigo-500"}`}>
+            {isStaff ? "Staff" : "FrontDesk AI"}
+          </div>
+        </div>
+      )}
+    </div>
           );
         })}
       </main>
 
-      <div className="border-t bg-white px-4 py-3 shadow-inner">
+      <div className="border-t bg-white px-4 pb-4 pt-3 shadow-inner sm:py-3">
         <div className="max-w-xl mx-auto">
-          <div className="flex items-end gap-2">
-            <input
-              className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none placeholder-gray-400"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && send()}
-              placeholder="Type your question..."
-              disabled={sending}
-            />
+          <div className="flex flex-col sm:flex-row gap-2 items-end">
+            <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2 items-end">
+              <input
+                className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none placeholder-gray-400 sm:px-3 sm:py-2"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && send()}
+                placeholder="Type your question..."
+                disabled={sending}
+              />
+              <button
+                className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors sm:px-4 sm:py-2"
+                onClick={send}
+                disabled={sending || !input.trim()}
+              >
+                Send
+              </button>
+            </div>
             <button
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              onClick={send}
-              disabled={sending || !input.trim()}
+              className="w-full sm:w-auto border border-gray-300 rounded-xl px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors sm:px-3 sm:py-1.5"
+              onClick={requestHuman}
+              disabled={sending}
             >
-              Send
+              {sending ? "Submitting..." : "Request human assistance"}
             </button>
           </div>
-          <button
-            className="mt-3 w-full border border-gray-300 rounded-xl px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            onClick={requestHuman}
-            disabled={sending}
-          >
-            {sending ? "Submitting..." : "Request human assistance"}
-          </button>
           {ticketId && (
             <div className="mt-2 text-xs text-gray-500">
               Ticket #{ticketId} — our team will respond shortly
