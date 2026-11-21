@@ -139,13 +139,24 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-2 items-end">
             <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2 items-end">
               <input
-                className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-[#111827] bg-white opacity-100 placeholder-[#9CA3AF] focus:text-[#111827] focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:text-gray-500 disabled:bg-gray-100 sm:px-3 sm:py-2"
+                className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-[#111827] [-webkit-text-fill-color:#111827] bg-white opacity-100 placeholder-[#9CA3AF] caret-[#111827] focus:text-[#111827] focus:[-webkit-text-fill-color:#111827] focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:text-gray-500 disabled:bg-gray-100 sm:px-3 sm:py-2"
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && send()}
                 placeholder="Type your question..."
                 disabled={sending}
               />
+              <style>{`
+                input:-webkit-autofill,
+                input:-webkit-autofill:focus,
+                input:-webkit-autofill:hover,
+                input:-webkit-autofill:active {
+                  -webkit-text-fill-color: #111827 !important;
+                  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+                  caret-color: #111827 !important;
+                  transition: background-color 5000s ease-in-out 0s;
+                }
+              `}</style>
               <button
                 className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors sm:px-4 sm:py-2"
                 onClick={send}
