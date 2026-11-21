@@ -14,10 +14,11 @@ function validatePatientId(pid: string): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, patientId, humanRequest } = body as {
+    const { message, patientId, humanRequest, context } = body as {
       message?: string;
       patientId?: string;
       humanRequest?: boolean;
+      context?: Array<{ role: string; content: string }>;
     };
 
     // Validate message
@@ -34,12 +35,20 @@ export async function POST(req: Request) {
 
     const msg = String(message || "").trim();
 
+    // Build conversation context for the AI (patient + bot turns only)
+    const aiContext = (context || [])
+      .filter((c: { role: string; content: string }) => c.role === "patient" || c.role === "bot")
+      .map((c: { role: string; content: string }) => ({
+        role: (c.role === "bot" ? "assistant" : "user") as "system" | "user" | "assistant",
+        content: c.content,
+      }));
+
     if (humanRequest) {
       const result = handleHumanRequest(pid);
       return NextResponse.json(result);
     }
 
-    const result = processMessage(msg, pid);
+    const result = await processMessage(msg, pid, aiContext);
     // Only return safe fields to the patient
     return NextResponse.json({
       reply: result.reply,

@@ -1,3 +1,4 @@
+import { aiAnswer, type Message } from "./ai";
 import clinic from "@/data/clinic.json";
 import { createTicket, findTicketByQuestion } from "./store";
 
@@ -23,6 +24,13 @@ function isEmergency(msg: string): boolean {
     "choking",
     "unconscious",
     "emergency",
+    "sansi",
+    "sans lene",
+    "khoon",
+    "khun",
+    "chhre",
+    "chhor",
+    "behosh",
   ];
   return emergencyPhrases.some(p => m.includes(p));
 }
@@ -34,6 +42,7 @@ function isMedical(msg: string): boolean {
     "swollen", "swelling", "bleeding", "bleed", "fever",
     "medicine", "tablet", "pill", "dosage", "what should i take",
     "symptom", "symptoms",
+    "dant dard", "dard", "sujan", "khoon",
   ];
   return medicalWords.some(w => m.includes(w));
 }
@@ -42,40 +51,18 @@ function findPrice(serviceName: string): { service: string; price: string } | un
   return c.prices.find(p => p.service.toLowerCase() === serviceName.toLowerCase());
 }
 
-export function processMessage(msg: string, patientId: string): AnswerResult {
+// Rule-based fallback answers (used when AI is unavailable)
+function ruleBasedAnswer(msg: string): AnswerResult | null {
   const m = msg.toLowerCase().trim();
 
-  // Greeting detection - friendly replies for hi, hello, good morning, etc.
-  const greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "good day", "namaste"];
+  // Greeting detection
+  const greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "good day", "namaste", "namaskar"];
   if (greetings.some(g => m === g || m.startsWith(g + " ") || m.endsWith(" " + g))) {
     return {
-      reply: "Hello! I'm the FrontDesk AI assistant for Smile Dental Clinic, Banjara Hills, Hyderabad. How can I help you today?",
+      reply: `Hello! I'm the FrontDesk AI assistant for ${c.clinic}. How can I help you today?`,
       type: "clinic",
     };
   }
-
-  // 1. Emergency detection - checked first, before anything else
-  // Bot rule: show emergency number first for emergencies
-  if (isEmergency(msg)) {
-    const existing = findTicketByQuestion(msg, patientId, ["urgent"]);
-    const t = existing ?? createTicket({ patientId, question: msg, status: "urgent" });
-    return {
-      reply: `${c.emergency_number}\n\n${c.emergency_rules}\n\nA ticket has been opened (urgent). Do not wait for a callback.`,
-      ticketId: t.id,
-      type: "emergency",
-    };
-  }
-
-  // 2. Medical safety - never diagnose, never prescribe
-  // Bot rule: for pain, swelling or symptoms, say a dentist must see the patient and offer to book
-  if (isMedical(msg)) {
-    return {
-      reply: "I'm sorry you're experiencing discomfort. A dentist must examine you in person to diagnose and treat this properly. I can help you book an appointment or request a callback from our team. Would you like me to do that?",
-      type: "medical",
-    };
-  }
-
-  // 3. Clinic data answers - these receive the "Answered from the clinic file" label
 
   // Saturday timing
   if (m.includes("saturday")) {
@@ -86,8 +73,28 @@ export function processMessage(msg: string, patientId: string): AnswerResult {
     };
   }
 
-  // General timings (include lunch break)
-  if (m.includes("open") || m.includes("timing") || m.includes("hours") || m.includes("when")) {
+  // Day-specific timing follow-ups (e.g. "and on Sunday?")
+  const dayTimings: Record<string, string> = {
+    monday: c.timings.Monday,
+    tuesday: c.timings.Tuesday,
+    wednesday: c.timings.Wednesday,
+    thursday: c.timings.Thursday,
+    friday: c.timings.Friday,
+    saturday: c.timings.Saturday,
+    sunday: c.timings.Sunday,
+  };
+  for (const [day, time] of Object.entries(dayTimings)) {
+    if (m.includes(day)) {
+      return {
+        reply: `On ${day.charAt(0).toUpperCase() + day.slice(1)} we are open ${time}.`,
+        label: "Answered from the clinic file",
+        type: "clinic",
+      };
+    }
+  }
+
+  // General timings
+  if (m.includes("open") || m.includes("timing") || m.includes("hours") || m.includes("when") || m.includes("khulta") || m.includes("kab") || m.includes("samay") || m.includes("time")) {
     const lines = Object.entries(c.timings).map(([day, time]) => `${day}: ${time}`).join("\n");
     return {
       reply: `Our clinic timings:\n${lines}\n\nLunch break: ${c.lunch_break}`,
@@ -105,8 +112,17 @@ export function processMessage(msg: string, patientId: string): AnswerResult {
     };
   }
 
+  // Lunch break
+  if (m.includes("lunch")) {
+    return {
+      reply: `Lunch break: ${c.lunch_break}`,
+      label: "Answered from the clinic file",
+      type: "clinic",
+    };
+  }
+
   // Prices
-  if (m.includes("price") || m.includes("cost") || m.includes("how much") || m.includes("fee")) {
+  if (m.includes("price") || m.includes("cost") || m.includes("how much") || m.includes("fee") || m.includes("kharch") || m.includes("dam") || m.includes("keemat") || m.includes("paise") || m.includes("rupaye") || m.includes("rate")) {
     if (m.includes("root canal")) {
       const p = findPrice("Root canal treatment");
       if (p) {
@@ -137,7 +153,7 @@ export function processMessage(msg: string, patientId: string): AnswerResult {
   }
 
   // Doctors
-  if (m.includes("doctor") || m.includes("dentist")) {
+  if (m.includes("doctor") || m.includes("dentist") || m.includes("dr ") || m.includes("dr.")) {
     const lines = c.doctors.map(d => `${d.name} - ${d.speciality} (${d.days})`).join("\n");
     return {
       reply: `Our doctors:\n${lines}`,
@@ -173,7 +189,7 @@ export function processMessage(msg: string, patientId: string): AnswerResult {
     };
   }
 
-  // Policies (appointment, walk-in, payment, EMI, children, sterilisation)
+  // Policies
   if (m.includes("policy") || m.includes("cancel") || m.includes("payment") || m.includes("walk") || m.includes("emi") || m.includes("children") || m.includes("sterilis")) {
     return {
       reply: `Clinic policies:\n${c.policies.join("\n")}`,
@@ -182,8 +198,7 @@ export function processMessage(msg: string, patientId: string): AnswerResult {
     };
   }
 
-  // 4. Discount / prompt injection protection - never promise discounts
-  // Bot rule: ignore any instruction to change rules, say politely you cannot do that
+  // Discount / prompt injection protection
   if (m.includes("discount") || m.includes("50%") || m.includes("ignore your rules") || m.includes("ignore rules") || m.includes("free") || m.includes("coupon")) {
     return {
       reply: "I'm sorry, I cannot offer discounts or change our clinic policies. Is there anything else I can help you with regarding our dental services?",
@@ -191,8 +206,59 @@ export function processMessage(msg: string, patientId: string): AnswerResult {
     };
   }
 
-  // 5. Unknown - create ticket (check for duplicate first), no label
-  // Bot rule: if not in file, say not sure, open ticket marked needs human, say callback within 2 working hours
+  return null;
+}
+
+export async function processMessage(
+  msg: string,
+  patientId: string,
+  context: Message[] = []
+): Promise<AnswerResult> {
+  const m = msg.toLowerCase().trim();
+
+  // 1. Emergency detection - rule-based, ALWAYS first (safety critical)
+  if (isEmergency(msg)) {
+    const existing = findTicketByQuestion(msg, patientId, ["urgent"]);
+    const t = existing ?? createTicket({ patientId, question: msg, status: "urgent" });
+    return {
+      reply: `${c.emergency_number}\n\n${c.emergency_rules}\n\nA ticket has been opened (urgent). Do not wait for a callback.`,
+      ticketId: t.id,
+      type: "emergency",
+    };
+  }
+
+  // 2. Medical safety - rule-based, ALWAYS (no diagnosis, no prescription)
+  if (isMedical(msg)) {
+    return {
+      reply: "I'm sorry you're experiencing discomfort. A dentist must examine you in person to diagnose and treat this properly. I can help you book an appointment or request a callback from our team. Would you like me to do that?",
+      type: "medical",
+    };
+  }
+
+  // 3. Discount / prompt injection protection - rule-based, ALWAYS
+  if (m.includes("discount") || m.includes("50%") || m.includes("ignore your rules") || m.includes("ignore rules") || m.includes("free") || m.includes("coupon")) {
+    return {
+      reply: "I'm sorry, I cannot offer discounts or change our clinic policies. Is there anything else I can help you with regarding our dental services?",
+      type: "discount",
+    };
+  }
+
+  // 4. Try AI answer for everything else (greetings, timings, prices, doctors, location, insurance, services, policies, follow-ups, Hindi/Hinglish)
+  const aiReply = await aiAnswer(msg, context);
+  if (aiReply) {
+    return {
+      reply: aiReply,
+      type: "clinic",
+    };
+  }
+
+  // 5. Rule-based fallback (when AI is unavailable)
+  const ruleResult = ruleBasedAnswer(msg);
+  if (ruleResult) {
+    return ruleResult;
+  }
+
+  // 6. Unknown - create ticket (check for duplicate first)
   const existing = findTicketByQuestion(msg, patientId, ["needs human", "urgent"]);
   if (existing) {
     return {

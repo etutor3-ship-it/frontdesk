@@ -52,15 +52,20 @@ export default function Home() {
 
   async function send() {
     if (!input.trim() || !patientId || sending) return;
-    setSending(true);
     const text = input;
+    const prevMsgs = msgs;
+    setSending(true);
     setInput("");
     setMsgs(prev => [...prev, { from: "patient", text }]);
     try {
+      const context = prevMsgs.map(m => ({
+        role: m.from === "bot" ? "bot" : "patient",
+        content: m.text,
+      }));
       const r = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, patientId }),
+        body: JSON.stringify({ message: text, patientId, context }),
       });
       const data = await r.json();
       setMsgs(prev => [...prev, { from: "bot", text: data.reply, label: data.label }]);
