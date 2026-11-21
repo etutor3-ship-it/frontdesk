@@ -55,15 +55,6 @@ function findPrice(serviceName: string): { service: string; price: string } | un
 function ruleBasedAnswer(msg: string): AnswerResult | null {
   const m = msg.toLowerCase().trim();
 
-  // Greeting detection
-  const greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "good day", "namaste", "namaskar"];
-  if (greetings.some(g => m === g || m.startsWith(g + " ") || m.endsWith(" " + g))) {
-    return {
-      reply: `Hello! I'm the FrontDesk AI assistant for ${c.clinic}. How can I help you today?`,
-      type: "clinic",
-    };
-  }
-
   // Saturday timing
   if (m.includes("saturday")) {
     return {
@@ -227,7 +218,16 @@ export async function processMessage(
     };
   }
 
-  // 2. Medical safety - rule-based, ALWAYS (no diagnosis, no prescription)
+  // 2. Greeting detection - rule-based, ALWAYS before AI (no ticket, no AI dependency)
+  const greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "good day", "namaste", "namaskar"];
+  if (greetings.some(g => m === g || m.startsWith(g + " ") || m.endsWith(" " + g))) {
+    return {
+      reply: `Hello! I'm the FrontDesk AI assistant for ${c.clinic}. How can I help you today?`,
+      type: "clinic",
+    };
+  }
+
+  // 3. Medical safety - rule-based, ALWAYS (no diagnosis, no prescription)
   if (isMedical(msg)) {
     return {
       reply: "I'm sorry you're experiencing discomfort. A dentist must examine you in person to diagnose and treat this properly. I can help you book an appointment or request a callback from our team. Would you like me to do that?",
@@ -235,7 +235,7 @@ export async function processMessage(
     };
   }
 
-  // 3. Discount / prompt injection protection - rule-based, ALWAYS
+  // 4. Discount / prompt injection protection - rule-based, ALWAYS
   if (m.includes("discount") || m.includes("50%") || m.includes("ignore your rules") || m.includes("ignore rules") || m.includes("free") || m.includes("coupon")) {
     return {
       reply: "I'm sorry, I cannot offer discounts or change our clinic policies. Is there anything else I can help you with regarding our dental services?",
@@ -243,7 +243,7 @@ export async function processMessage(
     };
   }
 
-  // 4. Try AI answer for everything else (greetings, timings, prices, doctors, location, insurance, services, policies, follow-ups, Hindi/Hinglish)
+  // 5. Try AI answer for everything else (clinic FAQs, follow-ups, Hindi/Hinglish, etc.)
   const aiReply = await aiAnswer(msg, context);
   if (aiReply) {
     return {
@@ -252,7 +252,7 @@ export async function processMessage(
     };
   }
 
-  // 5. Rule-based fallback (when AI is unavailable)
+  // 6. Rule-based fallback (when AI is unavailable)
   const ruleResult = ruleBasedAnswer(msg);
   if (ruleResult) {
     return ruleResult;
