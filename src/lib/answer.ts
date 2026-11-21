@@ -255,10 +255,15 @@ export async function processMessage(
   }
 
   // 2. Greeting detection - rule-based, ALWAYS before AI (no ticket, no AI dependency)
+  // Normalize whitespace and case to handle "H I", "  hi  ", "h i", etc.
+  const normalized = m.replace(/\s+/g, ' ').trim();
+  const compact = normalized.replace(/\s+/g, '');
   const greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "good day", "namaste", "namaskar"];
-  if (greetings.some(g => m === g || m.startsWith(g + " ") || m.endsWith(" " + g))) {
+  const compactGreetings = greetings.map(g => g.replace(/\s+/g, ''));
+  if (greetings.includes(normalized) || compactGreetings.includes(compact) ||
+      greetings.some(g => m.startsWith(g + " ") || m.endsWith(" " + g))) {
     return {
-      reply: `Hello! I'm the FrontDesk AI assistant for ${c.clinic}. How can I help you today?`,
+      reply: `Hello! Welcome to ${c.clinic}. How can I help you today?`,
       type: "clinic",
     };
   }
